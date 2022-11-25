@@ -167,6 +167,12 @@ void tdsValue() {
 
       Serial.begin(115200);
       pinMode(TdsSensorPin, INPUT);
+      pinMode(relay1,OUTPUT);
+      pinMode(relay2,OUTPUT);
+      pinMode(relay3,OUTPUT);
+      pinMode(relay4,OUTPUT);
+      pinMode(LED,OUTPUT);
+      pinMode(AC_LOAD,OUTPUT);
       WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
       Serial.print("Connecting to Wi-Fi");
       while (WiFi.status() != WL_CONNECTED)
@@ -260,28 +266,30 @@ void tdsValue() {
 
       // Firebase.ready() should be called repeatedly to handle authentication tasks.
 
-      if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
+      if (Firebase.ready())
       {
-        sendDataPrevMillis = millis();
+        
         phValue();
         tdsValue();
         DHT.read(DHT11_PIN);
         temperature = DHT.temperature;
         humidity = DHT.humidity;
 
+        if (ph <= random(0,5)){
+          digitalWrite(realy1,LOW);
+          digitalWrite(realy2,LOW);
+          digitalWrite(realy3,LOW);
+          digitalWrite(realy4,LOW);
+        }
+
 
 
         bool bVal;
         Serial.printf("Get bool ref... %s\n", Firebase.RTDB.getBool(&fbdo, F("/command/LED"), &bVal) ? bVal ? "true" : "false" : fbdo.errorReason().c_str());
 
-        Serial.printf("Set int... %s\n", Firebase.RTDB.setInt(&fbdo, F("/command/LED"), random(0, 1)) ? "ok" : fbdo.errorReason().c_str());
-
-
-        int iVal = 0;
-        Serial.printf("Get int ref... %s\n", Firebase.RTDB.getInt(&fbdo, F("/data/Humidity"), &iVal) ? String(iVal).c_str() : fbdo.errorReason().c_str());
-
-        Serial.printf("Set float... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Humidity"), count + 10.2) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set double... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Temperature"), count + 35.517549723765) ? "ok" : fbdo.errorReason().c_str());
+        Serial.printf("Set int... %s\n", Firebase.RTDB.setInt(&fbdo, F("/command/LED"), random(0, 1)) ? "ok" : fbdo.errorReason().c_str());       
+        Serial.printf("Set float... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Humidity"), humidity) ? "ok" : fbdo.errorReason().c_str());
+        Serial.printf("Set double... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Temperature"), temperature) ? "ok" : fbdo.errorReason().c_str());
 
 
 
