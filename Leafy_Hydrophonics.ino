@@ -16,8 +16,8 @@ DFRobot_DHT11 DHT;
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-#define WIFI_SSID "SSID"
-#define WIFI_PASSWORD "PASSWORD"
+#define WIFI_SSID "ANTT SOFT_ROOM"
+#define WIFI_PASSWORD "AnttRoboticsLtd123"
 
 // For the following credentials, see examples/Authentications/SignInAsUser/EmailPassword/EmailPassword.ino
 
@@ -57,6 +57,9 @@ int relay3 = 14;
 int relay4 = 12;
 int LED = 13;
 int AC_LOAD = 15;
+bool autoCommand;
+bool acLoad;
+bool command;
 
 // Define Firebase Data object
 FirebaseData fbdo;
@@ -148,137 +151,148 @@ void tdsValue() {
 
       //convert voltage value to tds value
       tds = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
-      
+
     }
   }
   //return tds;
 }
 
-    void setup()
-    {
+void setup()
+{
 
-      Serial.begin(115200);
-      pinMode(TdsSensorPin, INPUT);
-      pinMode(relay1,OUTPUT);
-      pinMode(relay2,OUTPUT);
-      pinMode(relay3,OUTPUT);
-      pinMode(relay4,OUTPUT);
-      pinMode(LED,OUTPUT);
-      pinMode(AC_LOAD,OUTPUT);
-      WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-      Serial.print("Connecting to Wi-Fi");
-      while (WiFi.status() != WL_CONNECTED)
-      {
-        Serial.print(".");
-        delay(300);
-      }
-      Serial.println();
-      Serial.print("Connected with IP: ");
-      Serial.println(WiFi.localIP());
-      Serial.println();
+  Serial.begin(115200);
+  pinMode(TdsSensorPin, INPUT);
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2, OUTPUT);
+  pinMode(relay3, OUTPUT);
+  pinMode(relay4, OUTPUT);
+  pinMode(LED, OUTPUT);
+  pinMode(AC_LOAD, OUTPUT);
+  digitalWrite(relay1, HIGH);
+  digitalWrite(relay2, HIGH);
+  digitalWrite(relay3, HIGH);
+  digitalWrite(relay4, HIGH);
+  digitalWrite(LED, HIGH);
+  digitalWrite(AC_LOAD, HIGH);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.println();
 
-      Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
+  Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
 
-      /* Assign the api key (required) */
-      config.api_key = API_KEY;
+  /* Assign the api key (required) */
+  config.api_key = API_KEY;
 
-      /* Assign the user sign in credentials */
-      auth.user.email = USER_EMAIL;
-      auth.user.password = USER_PASSWORD;
+  /* Assign the user sign in credentials */
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
 
-      /* Assign the RTDB URL (required) */
-      config.database_url = DATABASE_URL;
+  /* Assign the RTDB URL (required) */
+  config.database_url = DATABASE_URL;
 
-      /* Assign the callback function for the long running token generation task */
-      config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
+  /* Assign the callback function for the long running token generation task */
+  config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
 
 #if defined(ESP8266)
-      // In ESP8266 required for BearSSL rx/tx buffer for large data handle, increase Rx size as needed.
-      fbdo.setBSSLBufferSize(2048 /* Rx buffer size in bytes from 512 - 16384 */, 2048 /* Tx buffer size in bytes from 512 - 16384 */);
+  // In ESP8266 required for BearSSL rx/tx buffer for large data handle, increase Rx size as needed.
+  fbdo.setBSSLBufferSize(2048 /* Rx buffer size in bytes from 512 - 16384 */, 2048 /* Tx buffer size in bytes from 512 - 16384 */);
 #endif
 
-      // Limit the size of response payload to be collected in FirebaseData
-      fbdo.setResponseSize(2048);
+  // Limit the size of response payload to be collected in FirebaseData
+  fbdo.setResponseSize(2048);
 
-      Firebase.begin(&config, &auth);
+  Firebase.begin(&config, &auth);
 
-      // Comment or pass false value when WiFi reconnection will control by your code or third party library
-      Firebase.reconnectWiFi(true);
+  // Comment or pass false value when WiFi reconnection will control by your code or third party library
+  Firebase.reconnectWiFi(true);
 
-      Firebase.setDoubleDigits(5);
+  Firebase.setDoubleDigits(5);
 
-      config.timeout.serverResponse = 10 * 1000;
+  config.timeout.serverResponse = 10 * 1000;
+}
+
+void loop()
+{
+
+
+
+  // Firebase.ready() should be called repeatedly to handle authentication tasks.
+
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
+  {
+    sendDataPrevMillis = millis();
+
+    phValue();
+    tdsValue();
+    DHT.read(DHT11_PIN);
+    temperature = DHT.temperature;
+    humidity = DHT.humidity;
+
+    Serial.printf("Set humidity... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Humidity"), humidity) ? "ok" : fbdo.errorReason().c_str());
+    Serial.printf("Set temperature... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Temperature"), temperature) ? "ok" : fbdo.errorReason().c_str());
+    Serial.printf("Set ph... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/pH"), ph) ? "ok" : fbdo.errorReason().c_str());
+    Serial.printf("Set tds... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/tds"), tds) ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.println();
+    
+    String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
+    
+    while ((ph <= 6) && (autoC == "true")) {
+
+      unsigned long time = millis();
+
+      digitalWrite(relay1, LOW);
+      digitalWrite(relay2, LOW);
+      digitalWrite(relay3, LOW);
+      digitalWrite(relay4, LOW);
+    String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
+
+      if ((time == 10000) || (autoC == "false") || (ph >= 6)) {
+
+        digitalWrite(relay1, HIGH);
+        digitalWrite(relay2, HIGH);
+        digitalWrite(relay3, HIGH);
+        digitalWrite(relay4, HIGH);
+
+        break;
+      }
     }
 
-    void loop()
-    {
 
 
-
-      // Firebase.ready() should be called repeatedly to handle authentication tasks.
-
-      if (Firebase.ready())
-      {
-        
-        phValue();
-        tdsValue();
-        DHT.read(DHT11_PIN);
-        temperature = DHT.temperature;
-        humidity = DHT.humidity;
-
-        bool autoCommand = Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str();
-        
-        while ((ph <= random(0,5)) || (autoCommand == true)){
-
-          unsigned long time = millis();
-        
-          digitalWrite(relay1,LOW);
-          digitalWrite(relay2,LOW);
-          digitalWrite(relay3,LOW);
-          digitalWrite(relay4,LOW);
-          if((time==10000) || (autoCommand == false)){
-
-          digitalWrite(relay1,HIGH);
-          digitalWrite(relay2,HIGH);
-          digitalWrite(relay3,HIGH);
-          digitalWrite(relay4,HIGH);
-          
-            break;
-          }
-        }
-
-
-
-        
-        bool command = Firebase.RTDB.getBool(&fbdo, F("/command/LED"), &command) ? command ? "true" : "false" : fbdo.errorReason().c_str();
-        
-        if (command == true){
-          digitalWrite(LED,LOW);
-        }
-        else if (command == false){
-          digitalWrite(LED,HIGH);
-        }
-
-        bool acLoad = Firebase.RTDB.getBool(&fbdo, F("/command/acLoad"), &acLoad) ? acLoad ? "true" : "false" : fbdo.errorReason().c_str();
-        if ( acLoad == true ){
-
-          digitalWrite(AC_LOAD,LOW);
-        }
-        else if (acLoad == false){
-          digitalWrite(AC_LOAD,HIGH);
-        }
-       
-        Serial.printf("Set humidity... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Humidity"), humidity) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set temperature... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/Temperature"), temperature) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set ph... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/ph"), ph) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set tds... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/tdsValue"), tds) ? "ok" : fbdo.errorReason().c_str());
-
-        Serial.println();
-
-
-
-        
-      }
+    
+    String Led = String (Firebase.RTDB.getBool(&fbdo, F("/command/LED"), &command) ? command ? "true" : "false" : fbdo.errorReason().c_str());
+    
+    if (Led == "true") {
+      digitalWrite(LED, LOW);
+    }
+    else if (Led == "false") {
+      digitalWrite(LED, HIGH);
     }
 
     
+    String acL = String(Firebase.RTDB.getBool(&fbdo, F("/command/acLoad"), &acLoad) ? acLoad ? "true" : "false" : fbdo.errorReason().c_str());
+    
+    if (acL == "true") {
+
+      digitalWrite(AC_LOAD, LOW);
+    }
+    else if (acL == "false") {
+      digitalWrite(AC_LOAD, HIGH);
+    }
+
+
+    
+
+
+
+  }
+}
