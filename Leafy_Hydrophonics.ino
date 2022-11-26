@@ -94,7 +94,7 @@ void phValue() {
   //Serial.println(volt);
   ph = -5.70 * volt + calibration_value;
 
-  return ph;
+  //return ph;
 }
 
 // median filtering algorithm
@@ -148,8 +148,11 @@ void tdsValue() {
 
       //convert voltage value to tds value
       tds = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
-      return tds;
+      
     }
+  }
+  //return tds;
+}
 
     void setup()
     {
@@ -229,16 +232,16 @@ void tdsValue() {
 
           unsigned long time = millis();
         
-          digitalWrite(realy1,LOW);
-          digitalWrite(realy2,LOW);
-          digitalWrite(realy3,LOW);
-          digitalWrite(realy4,LOW);
+          digitalWrite(relay1,LOW);
+          digitalWrite(relay2,LOW);
+          digitalWrite(relay3,LOW);
+          digitalWrite(relay4,LOW);
           if((time==10000) || (autoCommand == false)){
 
-          digitalWrite(realy1,HIGH);
-          digitalWrite(realy2,HIGH);
-          digitalWrite(realy3,HIGH);
-          digitalWrite(realy4,HIGH);
+          digitalWrite(relay1,HIGH);
+          digitalWrite(relay2,HIGH);
+          digitalWrite(relay3,HIGH);
+          digitalWrite(relay4,HIGH);
           
             break;
           }
