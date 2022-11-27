@@ -245,17 +245,23 @@ void loop()
     
     String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
     
-    while ((ph <= 6) && (autoC == "true")) {
-
-      unsigned long time = millis();
-
+    while (autoC == "true") {
+      phValue();
+      
+      if ((ph <= 6) || (ph >= 8)){
       digitalWrite(relay1, LOW);
       digitalWrite(relay2, LOW);
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
+      delay(10000);
+      digitalWrite(relay1, HIGH);
+        digitalWrite(relay2, HIGH);
+        digitalWrite(relay3, HIGH);
+        digitalWrite(relay4, HIGH);
+      }
     String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
-
-      if ((time == 10000) || (autoC == "false") || (ph >= 6)) {
+      phValue();
+      if ((autoC == "false") || (ph = 7)) {
 
         digitalWrite(relay1, HIGH);
         digitalWrite(relay2, HIGH);
