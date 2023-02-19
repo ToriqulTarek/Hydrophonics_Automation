@@ -6,7 +6,7 @@
 #endif
 #include <DFRobot_DHT11.h>
 DFRobot_DHT11 DHT;
-#define DHT11_PIN 25
+#define DHT11_PIN 17
 #include <Firebase_ESP_Client.h>
 
 // Provide the token generation process info.
@@ -16,8 +16,8 @@ DFRobot_DHT11 DHT;
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-#define WIFI_SSID "ANTT SOFT_ROOM"
-#define WIFI_PASSWORD "AnttRoboticsLtd123"
+#define WIFI_SSID "Unagi"
+#define WIFI_PASSWORD "MySandw1ch"
 
 // For the following credentials, see examples/Authentications/SignInAsUser/EmailPassword/EmailPassword.ino
 
