@@ -75,31 +75,30 @@ unsigned long sendDataPrevMillis = 0;
 unsigned long count = 0;
 
 void phValue() {
-  for (int i = 0; i < 10; i++)
+for (int i = 0; i < 10; i++)
   {
-    buffer_arr[i] = analogRead(phPin);
+    buffer1_arr[i] = analogRead(phPin);
     delay(30);
   }
   for (int i = 0; i < 9; i++)
   {
     for (int j = i + 1; j < 10; j++)
     {
-      if (buffer_arr[i] > buffer_arr[j])
+      if (buffer1_arr[i] > buffer1_arr[j])
       {
-        temp = buffer_arr[i];
-        buffer_arr[i] = buffer_arr[j];
-        buffer_arr[j] = temp;
+        temp1 = buffer1_arr[i];
+        buffer1_arr[i] = buffer1_arr[j];
+        buffer1_arr[j] = temp1;
       }
     }
   }
-  avgval = 0;
+  avgval1 = 0;
   for (int i = 2; i < 8; i++)
-    avgval += buffer_arr[i];
-  float volt = (float)avgval * 3.3 / 4096.0 / 6;
+    avgval1 += buffer1_arr[i];
+  float volt1 = (float)avgval1 * 3.3 / 4096.0 / 6;
   //Serial.print("Voltage: ");
   //Serial.println(volt);
-  ph = -5.70 * volt + calibration_value;
-
+  ph = -5.70 * volt1 + calibration_value1;
   //long rn = random(0, 1000);
   myRA.addValue(ph);
   samples++;
