@@ -54,10 +54,10 @@ float averageVoltage = 0;
 float temperature = 0;
 float humidity = 0;
 
-int relay1 = 26;
-int relay2 = 27;
-int relay3 = 14;
-int relay4 = 12;
+int phUp = 26;
+int TDS25 = 27;
+int TDS75 = 14;
+int phDown = 12;
 int LED = 13;
 int AC_LOAD = 15;
 bool autoCommand;
@@ -104,7 +104,7 @@ void phValue() {
   myRA.addValue(ph);
   samples++;
   //Serial.print("Running Average: ");
-  float avgpH =( myRA.getAverage(), 2);
+  float avgpH = ( myRA.getAverage(), 2);
 
   if (samples == 30)
   {
@@ -112,7 +112,7 @@ void phValue() {
     myRA.clear();
   }
   delay(100);
- 
+
   //return ph;
   Serial.print("Ph Value :");
   Serial.println(ph);
@@ -184,18 +184,18 @@ void setup()
 {
 
   Serial.begin(115200);
-  pinMode(phPin,INPUT);
+  pinMode(phPin, INPUT);
   pinMode(TdsSensorPin, INPUT);
-  pinMode(relay1, OUTPUT);
-  pinMode(relay2, OUTPUT);
-  pinMode(relay3, OUTPUT);
-  pinMode(relay4, OUTPUT);
+  pinMode(phUp, OUTPUT);
+  pinMode(TDS25, OUTPUT);
+  pinMode(TDS75, OUTPUT);
+  pinMode(phDown, OUTPUT);
   pinMode(LED, OUTPUT);
   pinMode(AC_LOAD, OUTPUT);
-  digitalWrite(relay1, HIGH);
-  digitalWrite(relay2, HIGH);
-  digitalWrite(relay3, HIGH);
-  digitalWrite(relay4, HIGH);
+  digitalWrite(phUp, HIGH);
+  digitalWrite(TDS25, HIGH);
+  digitalWrite(TDS75, HIGH);
+  digitalWrite(phDown, HIGH);
   digitalWrite(LED, HIGH);
   digitalWrite(AC_LOAD, HIGH);
   myRA.clear(); // explicitly start clean
@@ -273,27 +273,43 @@ void loop()
     Serial.printf("Set tds... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/data/tds"), tds) ? "ok" : fbdo.errorReason().c_str());
 
     Serial.println();
-    
+
     String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
-    
+
     while (autoC == "true") {
       phValue();
-      
-      if ((ph <= 6) || (ph >= 8)){
-      digitalWrite(relay1, LOW);
-      digitalWrite(relay2, LOW);
-      digitalWrite(relay3, LOW);
-      digitalWrite(relay4, LOW);
-      
-      }
-    String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
-      phValue();
-      if ((autoC == "false") || (ph = 7)) {
+      tdsValue();
+      if (ph >= 6.6) {
 
-        digitalWrite(relay1, HIGH);
-        digitalWrite(relay2, HIGH);
-        digitalWrite(relay3, HIGH);
-        digitalWrite(relay4, HIGH);
+        digitalWrite(phDown, LOW);
+
+      }
+      else if (ph <= 6.5) {
+        
+        digitalWrite(phDown, HIGH);
+      }
+      if (tds < 800) {
+
+        digitalWrite(TDS25, LOW);
+        digitalWrite(TDS75, LOW);
+        delay(900);
+        digitalWrite(TDS25, HIGH);
+        delay(2900);
+        digitalWrite(TDS75, HIGH);
+      }
+      else if (tds > 1200) {
+        digitalWrite(TDS75, HIGH);
+        digitalWrite(TDS25, HIGH);
+      }
+      String autoC = String(Firebase.RTDB.getBool(&fbdo, F("/command/autoMode"), &autoCommand) ? autoCommand ? "true" : "false" : fbdo.errorReason().c_str());
+      phValue();
+      tdsValue();
+      if (autoC == "false") {
+
+        digitalWrite(phUp, HIGH);
+        digitalWrite(TDS25, HIGH);
+        digitalWrite(TDS75, HIGH);
+        digitalWrite(phDown, HIGH);;
 
         break;
       }
@@ -301,9 +317,9 @@ void loop()
 
 
 
-    
+
     String Led = String (Firebase.RTDB.getBool(&fbdo, F("/command/LED"), &command) ? command ? "true" : "false" : fbdo.errorReason().c_str());
-    
+
     if (Led == "true") {
       digitalWrite(LED, LOW);
     }
@@ -311,9 +327,9 @@ void loop()
       digitalWrite(LED, HIGH);
     }
 
-    
+
     String acL = String(Firebase.RTDB.getBool(&fbdo, F("/command/acLoad"), &acLoad) ? acLoad ? "true" : "false" : fbdo.errorReason().c_str());
-    
+
     if (acL == "true") {
 
       digitalWrite(AC_LOAD, LOW);
@@ -323,7 +339,7 @@ void loop()
     }
 
 
-    
+
 
 
 
